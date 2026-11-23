@@ -1,29 +1,31 @@
 """
 Orchestrator – sequences agents, enforces time budgets, sets run status.
-For Day 1 Checkpoint 1 we only run: Scout -> Mapper.
-Later steps (Hunter, Reader, Analyst, etc.) will be added in subsequent gates.
+Pipeline: Scout -> Mapper -> Hunter (Changes) -> Reporter.
+Never executes code from the scanned repository.
 """
 import sys
 import time
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Optional
 
 from guardian.config import AGENT_TIMEOUT_S, GLOBAL_TIMEOUT_S, OUT_DIR
+from guardian.hunter import Hunter
 from guardian.ledger import Ledger
 from guardian.mapper import Mapper
+from guardian.reporter import Reporter
 from guardian.scout import Scout, ScoutError
 
 
 class Orchestrator:
     """
-    Runs agents in sequence (and later in parallel).
-    Writes run_summary.json at the end.
+    Runs agents in sequence and enforces budgets.
     """
 
-    def __init__(self, run_id: str, ai_enabled: bool = True):
+    def __init__(self, run_id: str, ai_enabled: bool = False, custom_out: Optional[Path] = None):
         self.run_id = run_id
         self.ai_enabled = ai_enabled
-        self.out_dir = OUT_DIR / run_id
+        self.out_dir = (custom_out / run_id) if custom_out else (OUT_DIR / run_id)
         self.out_dir.mkdir(parents=True, exist_ok=True)
 
         self.ledger = Ledger(self.out_dir)
@@ -34,41 +36,86 @@ class Orchestrator:
         self._agent_times: dict = {}
 
     # ------------------------------------------------------------------
-    # Main scan flow
+    # Main scan / checkpoint flow
     # ------------------------------------------------------------------
 
     def scan(
         self,
         target: str,
         since: str = "",
+        baseline_dir: Optional[Path] = None,
+        demo_mode: bool = False,
         remediate: bool = False,
         demo_cache: bool = False,
+        is_checkpoint: bool = False,
     ) -> None:
         """
-        Run the full pipeline (or as much as is implemented for the current gate).
+        Run the complete pipeline: Scout -> Mapper -> Hunter -> Reporter.
         """
         print(f"\n{'='*60}")
-        print(f"  Guardian Security Scan")
-        print(f"  Run ID : {self.run_id}")
-        print(f"  Target : {target}")
-        print(f"  AI     : {'on' if self.ai_enabled else 'off (--no-ai)'}")
-        print(f"  Output : {self.out_dir}")
+        print(f"  Guardian {'Checkpoint' if is_checkpoint else 'Security Scan'}")
+        print(f"  Run ID  : {self.run_id}")
+        print(f"  Target  : {target}")
+        if since:
+            print(f"  Since   : {since}")
+        if baseline_dir:
+            print(f"  BaseDir : {baseline_dir}")
+        print(f"  AI      : {'on' if self.ai_enabled else 'off (--no-ai)'}")
+        print(f"  DemoMode: {'yes (offline)' if (demo_mode or demo_cache) else 'no'}")
+        print(f"  Output  : {self.out_dir}")
         print(f"{'='*60}\n")
 
         scout = Scout(self.ledger)
+        diff_res = None
 
         try:
             # ── 1. Scout ──────────────────────────────────────────────
             repo_dir = self._run_agent("scout", lambda: scout.run(target))
 
+            # Auto-detect git history for baseline if --baseline or --since is absent
+            effective_since = since
+            effective_baseline_dir = baseline_dir
+            if not effective_since and not effective_baseline_dir:
+                if (repo_dir / ".git").exists():
+                    # Check if HEAD~1 exists in repo
+                    import subprocess
+                    r = subprocess.run(["git", "-C", str(repo_dir), "rev-parse", "--verify", "HEAD~1"], capture_output=True)
+                    if r.returncode == 0:
+                        effective_since = "HEAD~1"
+
             # ── 2. Mapper (SBOM + Graph) ──────────────────────────────
             mapper = Mapper(self.ledger, self.out_dir)
             self._run_agent("mapper", lambda: mapper.run(repo_dir))
 
-            # ── Checkpoint 1 complete ─────────────────────────────────
-            self.ledger.run_status = "COMPLETE"
-            print("\n✅  DAY-1 CHECKPOINT 1 COMPLETE")
+            # ── 3. Hunter (Vulnerabilities, Anomalies, Baseline Diff) ─
+            hunter = Hunter(self.ledger, self.out_dir, demo_mode=(demo_mode or demo_cache))
+            self._run_agent(
+                "hunter",
+                lambda: hunter.run(
+                    repo_dir=repo_dir,
+                    components=mapper.components,
+                    since_ref=effective_since,
+                    baseline_dir=effective_baseline_dir,
+                )
+            )
+            diff_res = hunter.diff_result
+
+            # ── 4. Reporter (HTML, Findings JSON, Baseline JSON) ──────
+            repo_key = Path(target).name if not target.startswith("http") else target.rstrip("/").split("/")[-1]
+            reporter = Reporter(self.ledger, self.out_dir)
+            self._run_agent(
+                "reporter",
+                lambda: reporter.generate(diff_result=diff_res, repo_key=repo_key, is_checkpoint=is_checkpoint)
+            )
+
+            # Final run status
+            if self.ledger.run_status == "RUNNING":
+                self.ledger.run_status = "COMPLETE"
+
+            print("\n✅  DAY-1 CHECKPOINT COMPLETE: What is in app, what changed, and what appears risky.")
             self._print_coverage_summary()
+            self._print_diff_summary(diff_res)
+            self._print_risks_summary()
 
         except ScoutError as exc:
             print(f"\n❌  Scout error: {exc}", file=sys.stderr)
@@ -122,6 +169,38 @@ class Orchestrator:
                           (f" [capped: {cap} skipped]" if cap else ""))
         print("─" * 40)
 
+    def _print_diff_summary(self, diff_res) -> None:
+        if not diff_res:
+            return
+        print("\n🔍  WHAT CHANGED (BASELINE COMPARISON)")
+        print("─" * 40)
+        if not diff_res.baseline_available:
+            print(f"  Baseline status    : UNAVAILABLE")
+            print(f"  Reason             : {diff_res.unavailable_reason}")
+        else:
+            print(f"  Baseline           : {diff_res.baseline_ref}")
+            print(f"  Added (+)          : {diff_res.count_added}")
+            print(f"  Removed (-)        : {diff_res.count_removed}")
+            print(f"  Upgraded (↑)       : {diff_res.count_upgraded}")
+            print(f"  Downgraded (↓)     : {diff_res.count_downgraded}")
+            print(f"  Modified (⚙)       : {diff_res.count_modified}")
+            print(f"  New install scripts: {diff_res.count_new_install_scripts}")
+        print("─" * 40)
+
+    def _print_risks_summary(self) -> None:
+        print("\n⚠️   WHAT APPEARS RISKY (FINDINGS)")
+        print("─" * 40)
+        crit = sum(1 for f in self.ledger.findings if f.risk.lower() == "critical")
+        high = sum(1 for f in self.ledger.findings if f.risk.lower() == "high")
+        med = sum(1 for f in self.ledger.findings if f.risk.lower() == "medium")
+        low = sum(1 for f in self.ledger.findings if f.risk.lower() == "low")
+        print(f"  Critical : {crit}")
+        print(f"  High     : {high}")
+        print(f"  Medium   : {med}")
+        print(f"  Low      : {low}")
+        print(f"  Total    : {len(self.ledger.findings)}")
+        print("─" * 40)
+
     def _write_summary(self) -> None:
         import json
         summary = {
@@ -144,5 +223,6 @@ class Orchestrator:
         for f in sorted(self.out_dir.iterdir()):
             size = f.stat().st_size
             print(f"   {f.name:<30} {size:>8,} bytes")
-        print(f"\n   Open graph: {self.out_dir / 'graph.html'}")
-        print(f"   Run status: {self.ledger.run_status}\n")
+        print(f"\n   Open report: {self.out_dir / 'checkpoint.html'}")
+        print(f"   Open graph : {self.out_dir / 'graph.html'}")
+        print(f"   Run status : {self.ledger.run_status}\n")

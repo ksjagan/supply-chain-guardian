@@ -1,0 +1,126 @@
+{
+  "follow-redirects@1.15.4": [
+    {
+      "id": "GHSA-cxjh-pqwp-8mfp",
+      "summary": "follow-redirects' Proxy-Authorization header leak in cross-origin redirects",
+      "details": "follow-redirects is an open source fully conforming drop-in replacement for Node's http and https modules. In affected versions follow-redirects may leak sensitive headers (including Proxy-Authorization) during cross-origin redirects.",
+      "aliases": ["CVE-2024-28849"],
+      "modified": "2024-03-14T17:00:00Z",
+      "published": "2024-03-14T16:00:00Z",
+      "database_specific": {
+        "severity": "HIGH",
+        "cvss_score": 7.1
+      },
+      "affected": [
+        {
+          "package": {
+            "name": "follow-redirects",
+            "ecosystem": "npm"
+          },
+          "ranges": [
+            {
+              "type": "SEMVER",
+              "events": [
+                { "introduced": "0" },
+                { "fixed": "1.15.6" }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "express@4.18.2": [
+    {
+      "id": "GHSA-qw6h-v8gh-w36x",
+      "summary": "Express.js vulnerable to open redirect when response.redirect is used",
+      "details": "Passing untrusted user input directly to res.redirect() in Express may lead to Open Redirect vulnerabilities.",
+      "aliases": ["CVE-2024-43796"],
+      "modified": "2024-09-10T18:00:00Z",
+      "published": "2024-09-10T18:00:00Z",
+      "database_specific": {
+        "severity": "MEDIUM",
+        "cvss_score": 6.1
+      },
+      "affected": [
+        {
+          "package": {
+            "name": "express",
+            "ecosystem": "npm"
+          },
+          "ranges": [
+            {
+              "type": "SEMVER",
+              "events": [
+                { "introduced": "0" },
+                { "fixed": "4.19.2" }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "debug@2.6.9": [
+    {
+      "id": "GHSA-962m-mh2m-29wh",
+      "summary": "Regular Expression Denial of Service in debug",
+      "details": "Affected versions of debug are vulnerable to regular expression denial of service when untrusted input is formatted.",
+      "aliases": ["CVE-2017-16137"],
+      "modified": "2021-01-08T20:00:00Z",
+      "published": "2018-04-26T00:00:00Z",
+      "database_specific": {
+        "severity": "HIGH",
+        "cvss_score": 7.5
+      },
+      "affected": [
+        {
+          "package": {
+            "name": "debug",
+            "ecosystem": "npm"
+          },
+          "ranges": [
+            {
+              "type": "SEMVER",
+              "events": [
+                { "introduced": "0" },
+                { "fixed": "3.1.0" }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "canary-old-cve@0.0.1": [
+    {
+      "id": "GHSA-canary-0001",
+      "summary": "Planted Sentinel Canary Vulnerability for Self-Test",
+      "details": "Synthetic canary record for testing detection pipelines.",
+      "aliases": ["CVE-2020-0000-CANARY"],
+      "modified": "2024-01-01T00:00:00Z",
+      "published": "2024-01-01T00:00:00Z",
+      "database_specific": {
+        "severity": "CRITICAL",
+        "cvss_score": 9.8
+      },
+      "affected": [
+        {
+          "package": {
+            "name": "canary-old-cve",
+            "ecosystem": "npm"
+          },
+          "ranges": [
+            {
+              "type": "SEMVER",
+              "events": [
+                { "introduced": "0" },
+                { "fixed": "0.0.2" }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

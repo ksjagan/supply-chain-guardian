@@ -212,6 +212,24 @@ class Mapper:
                 # The direct parent is the second element (index 1) in the path
                 origin_bref = path[1] if len(path) > 1 else ROOT_BOM_REF
                 origin_label = readable[1] if len(readable) > 1 else "[root]"
+                comp.direct_parent = origin_label
+
+                # Origin dictionary: {ecosystem, registry_host, manifest_file, direct_parent}
+                reg_host = "registry.npmjs.org"
+                if comp.resolved_url:
+                    try:
+                        from urllib.parse import urlparse
+                        p_host = urlparse(comp.resolved_url).netloc
+                        if p_host:
+                            reg_host = p_host
+                    except Exception:
+                        pass
+                comp.origin = {
+                    "ecosystem": comp.ecosystem,
+                    "registry_host": reg_host,
+                    "manifest_file": comp.manifest_path,
+                    "direct_parent": origin_label,
+                }
 
                 self.ledger.add_evidence(
                     kind="dependency_path",
@@ -225,6 +243,7 @@ class Mapper:
                         "path_readable": readable,
                         "depth": len(path) - 1,
                         "origin_direct_dep": origin_label,
+                        "origin": comp.origin,
                     },
                 )
             except (nx.NetworkXNoPath, nx.NodeNotFound):

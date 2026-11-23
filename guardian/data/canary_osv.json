@@ -1,0 +1,28 @@
+{
+  "id": "GHSA-canary-0001",
+  "summary": "Planted Sentinel Canary Vulnerability for Self-Test",
+  "details": "Synthetic canary fixture validating vulnerability lookup and rule evaluation code paths.",
+  "aliases": ["CVE-2020-0000-CANARY"],
+  "modified": "2024-01-01T00:00:00Z",
+  "published": "2024-01-01T00:00:00Z",
+  "database_specific": {
+    "severity": "CRITICAL"
+  },
+  "affected": [
+    {
+      "package": {
+        "name": "canary-old-cve",
+        "ecosystem": "npm"
+      },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            { "introduced": "0" },
+            { "fixed": "0.0.2" }
+          ]
+        }
+      ]
+    }
+  ]
+}

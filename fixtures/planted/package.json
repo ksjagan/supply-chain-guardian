@@ -1,0 +1,7 @@
+{
+  "name": "planted-fixture",
+  "version": "1.0.0",
+  "dependencies": {
+    "expresss": "^1.0.0"
+  }
+}

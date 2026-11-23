@@ -53,6 +53,8 @@ class Component:
     integrity: str          # hash string from lockfile (or '')
     manifest_path: str      # which file declared it
     evidence_id: str        # E-xxx that recorded this component
+    direct_parent: str = "" # direct dependency root ancestor
+    origin: dict = field(default_factory=dict) # {ecosystem, registry_host, manifest_file, direct_parent}
 
 
 @dataclass
@@ -78,3 +80,8 @@ class Finding:
     skeptic: dict       # filled by Skeptic agent (or {})
     remediation: dict   # {option_id, validated} or {}
     status: str         # verified | unverified | needs-review
+    cve: str = ""       # e.g. CVE-2024-xxxx
+    cvss: str = ""      # e.g. 7.5
+    fix_version: str = "" # e.g. 4.17.21
+    direct_parent_to_upgrade: str = "" # direct parent to upgrade
+    raw_data: dict = field(default_factory=dict)
