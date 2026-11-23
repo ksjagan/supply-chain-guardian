@@ -1,6 +1,7 @@
 """
 Orchestrator – sequences agents, enforces time budgets, sets run status.
-Pipeline: Scout -> Mapper -> Hunter (Changes) -> Reporter.
+Pipeline:
+  Scout -> Mapper -> Hunter -> Reader (Quarantined LLM) -> Analyst & Prioritizer (LLM) -> Verifier (Code) -> Reporter.
 Never executes code from the scanned repository.
 """
 import sys
@@ -9,12 +10,16 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
+from guardian.analyst import Analyst
 from guardian.config import AGENT_TIMEOUT_S, GLOBAL_TIMEOUT_S, OUT_DIR
 from guardian.hunter import Hunter
 from guardian.ledger import Ledger
+from guardian.llm.client import LLMClient
 from guardian.mapper import Mapper
+from guardian.reader import Reader
 from guardian.reporter import Reporter
 from guardian.scout import Scout, ScoutError
+from guardian.verifier import Verifier
 
 
 class Orchestrator:
@@ -22,7 +27,7 @@ class Orchestrator:
     Runs agents in sequence and enforces budgets.
     """
 
-    def __init__(self, run_id: str, ai_enabled: bool = False, custom_out: Optional[Path] = None):
+    def __init__(self, run_id: str, ai_enabled: bool = True, custom_out: Optional[Path] = None):
         self.run_id = run_id
         self.ai_enabled = ai_enabled
         self.out_dir = (custom_out / run_id) if custom_out else (OUT_DIR / run_id)
@@ -34,6 +39,11 @@ class Orchestrator:
 
         self._start_time = time.time()
         self._agent_times: dict = {}
+        self.llm_client: Optional[LLMClient] = None
+        if self.ai_enabled:
+            client = LLMClient()
+            if client.is_available():
+                self.llm_client = client
 
     # ------------------------------------------------------------------
     # Main scan / checkpoint flow
@@ -50,8 +60,11 @@ class Orchestrator:
         is_checkpoint: bool = False,
     ) -> None:
         """
-        Run the complete pipeline: Scout -> Mapper -> Hunter -> Reporter.
+        Run the complete pipeline: Scout -> Mapper -> Hunter -> Reader -> Analyst -> Verifier -> Reporter.
         """
+        provider_name = self.llm_client.provider if (self.llm_client and self.llm_client.is_available()) else "none"
+        ai_desc = f"on ({provider_name})" if self.ai_enabled and provider_name != "none" else ("fallback (deterministic)" if self.ai_enabled else "off (--no-ai)")
+
         print(f"\n{'='*60}")
         print(f"  Guardian {'Checkpoint' if is_checkpoint else 'Security Scan'}")
         print(f"  Run ID  : {self.run_id}")
@@ -60,13 +73,14 @@ class Orchestrator:
             print(f"  Since   : {since}")
         if baseline_dir:
             print(f"  BaseDir : {baseline_dir}")
-        print(f"  AI      : {'on' if self.ai_enabled else 'off (--no-ai)'}")
+        print(f"  AI      : {ai_desc}")
         print(f"  DemoMode: {'yes (offline)' if (demo_mode or demo_cache) else 'no'}")
         print(f"  Output  : {self.out_dir}")
         print(f"{'='*60}\n")
 
         scout = Scout(self.ledger)
         diff_res = None
+        analyst_res = None
 
         try:
             # ── 1. Scout ──────────────────────────────────────────────
@@ -77,7 +91,6 @@ class Orchestrator:
             effective_baseline_dir = baseline_dir
             if not effective_since and not effective_baseline_dir:
                 if (repo_dir / ".git").exists():
-                    # Check if HEAD~1 exists in repo
                     import subprocess
                     r = subprocess.run(["git", "-C", str(repo_dir), "rev-parse", "--verify", "HEAD~1"], capture_output=True)
                     if r.returncode == 0:
@@ -100,12 +113,29 @@ class Orchestrator:
             )
             diff_res = hunter.diff_result
 
-            # ── 4. Reporter (HTML, Findings JSON, Baseline JSON) ──────
+            # ── 4. Reader (Quarantined LLM) ───────────────────────────
+            reader = Reader(self.ledger, self.llm_client if self.ai_enabled else None)
+            self._run_agent("reader", lambda: reader.run())
+
+            # ── 5. Analyst & Prioritizer (LLM Agent) ──────────────────
+            analyst = Analyst(self.ledger, self.llm_client if self.ai_enabled else None)
+            analyst_res = self._run_agent("analyst", lambda: analyst.run())
+
+            # ── 6. Verifier (Deterministic Code Guardrail) ────────────
+            verifier = Verifier(self.ledger)
+            verif_res = self._run_agent("verifier", lambda: verifier.run())
+
+            # ── 7. Reporter (HTML, Findings JSON, Baseline JSON) ──────
             repo_key = Path(target).name if not target.startswith("http") else target.rstrip("/").split("/")[-1]
             reporter = Reporter(self.ledger, self.out_dir)
             self._run_agent(
                 "reporter",
-                lambda: reporter.generate(diff_result=diff_res, repo_key=repo_key, is_checkpoint=is_checkpoint)
+                lambda: reporter.generate(
+                    diff_result=diff_res,
+                    repo_key=repo_key,
+                    is_checkpoint=is_checkpoint,
+                    analyst_result=analyst_res,
+                )
             )
 
             # Final run status
@@ -115,7 +145,7 @@ class Orchestrator:
             print("\n✅  DAY-1 CHECKPOINT COMPLETE: What is in app, what changed, and what appears risky.")
             self._print_coverage_summary()
             self._print_diff_summary(diff_res)
-            self._print_risks_summary()
+            self._print_risks_summary(analyst_res, verif_res)
 
         except ScoutError as exc:
             print(f"\n❌  Scout error: {exc}", file=sys.stderr)
@@ -187,8 +217,8 @@ class Orchestrator:
             print(f"  New install scripts: {diff_res.count_new_install_scripts}")
         print("─" * 40)
 
-    def _print_risks_summary(self) -> None:
-        print("\n⚠️   WHAT APPEARS RISKY (FINDINGS)")
+    def _print_risks_summary(self, analyst_res: Optional[dict] = None, verif_res: Optional[dict] = None) -> None:
+        print("\n⚠️   WHAT APPEARS RISKY (FINDINGS & AI PRIORITIZATION)")
         print("─" * 40)
         crit = sum(1 for f in self.ledger.findings if f.risk.lower() == "critical")
         high = sum(1 for f in self.ledger.findings if f.risk.lower() == "high")
@@ -199,6 +229,10 @@ class Orchestrator:
         print(f"  Medium   : {med}")
         print(f"  Low      : {low}")
         print(f"  Total    : {len(self.ledger.findings)}")
+        if analyst_res and analyst_res.get("executive_summary"):
+            print(f"\n🧠  AI Executive Briefing:\n  {analyst_res['executive_summary']}")
+        if verif_res:
+            print(f"  Verifier : {verif_res.get('verified', 0)} verified by code, {verif_res.get('unverified', 0)} unverified")
         print("─" * 40)
 
     def _write_summary(self) -> None:

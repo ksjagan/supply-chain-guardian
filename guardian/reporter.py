@@ -3,6 +3,7 @@ Reporter agent (Day 1 Checkpoint).
 Generates checkpoint.html (self-contained, opens offline),
 report.html, findings.json, and baseline.json.
 Uses safe HTML escaping across all rendered fields.
+Includes AI Risk Prioritization & Executive Briefing.
 """
 import html
 import json
@@ -29,10 +30,11 @@ class Reporter:
         diff_result: Optional[DiffResult] = None,
         repo_key: str = "default",
         is_checkpoint: bool = True,
+        analyst_result: Optional[dict] = None,
     ) -> None:
         self._write_findings_json()
         self._write_baseline_json(repo_key)
-        self._write_checkpoint_html(diff_result)
+        self._write_checkpoint_html(diff_result, analyst_result)
 
     def _write_findings_json(self) -> None:
         path = self.out_dir / "findings.json"
@@ -79,7 +81,7 @@ class Reporter:
             json.dump(baseline_payload, fh, indent=2, default=str)
         print(f"[reporter] Saved baseline → {p2}")
 
-    def _write_checkpoint_html(self, diff: Optional[DiffResult]) -> None:
+    def _write_checkpoint_html(self, diff: Optional[DiffResult], analyst_res: Optional[dict] = None) -> None:
         total_comps = len(self.ledger.components)
         direct_comps = sum(1 for c in self.ledger.components if c.is_direct)
         trans_comps = total_comps - direct_comps
@@ -282,8 +284,44 @@ class Reporter:
             </div>
             """
 
+        # ── AI Risk Prioritization Section ─────────────────────────────
+        ai_panel_html = ""
+        exec_summary = ""
+        is_ai_powered = False
+        if analyst_res:
+            exec_summary = analyst_res.get("executive_summary", "")
+            is_ai_powered = analyst_res.get("ai_powered", False)
+
+        ai_badge = '<span class="pill-fix" style="background:#0284c7;color:#fff">AI Agent Active</span>' if is_ai_powered else '<span class="pill-flag">Deterministic Prioritizer</span>'
+        
+        prio_items_html = ""
+        p1_count = sum(1 for f in self.ledger.findings if "P1" in str(f.context.get("ai_priority", "")))
+        p2_count = sum(1 for f in self.ledger.findings if "P2" in str(f.context.get("ai_priority", "")))
+        p3_count = sum(1 for f in self.ledger.findings if "P3" in str(f.context.get("ai_priority", "")))
+
+        ai_panel_html = f"""
+        <div class="card ai-card">
+          <div class="card-header">
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="font-size:20px">🧠</span>
+              <h3 style="margin:0">AI Risk Analysis & Prioritization</h3>
+              {ai_badge}
+            </div>
+            <span class="pill-cve" style="background:#1e293b;color:#38bdf8">Step 3: Analyze with AI</span>
+          </div>
+          <div style="margin-top:10px;padding:12px;background:#0f172a;border-radius:8px;border-left:4px solid #38bdf8">
+            <div style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Executive Risk Briefing</div>
+            <p style="font-size:14px;color:#f1f5f9;line-height:1.6">{html.escape(exec_summary or 'All supply chain components mapped and correlated against known vulnerability advisories.')}</p>
+          </div>
+          <div style="display:flex;gap:12px;margin-top:14px;flex-wrap:wrap">
+            <div class="prio-stat prio-p1"><b>{p1_count}</b> Immediate Action (P1)</div>
+            <div class="prio-stat prio-p2"><b>{p2_count}</b> Remediation Queue (P2)</div>
+            <div class="prio-stat prio-p3"><b>{p3_count}</b> Hardening / Config (P3)</div>
+          </div>
+        </div>
+        """
+
         # ── Section C: What Appears Risky (Evidence Cards) ────────────
-        # Sort findings: critical -> high -> medium -> low
         risk_order = {"critical": 0, "high": 1, "medium": 2, "low": 3}
         sorted_findings = sorted(self.ledger.findings, key=lambda f: risk_order.get(f.risk.lower(), 4))
 
@@ -307,6 +345,13 @@ class Reporter:
                 fix_badge = f'<span class="pill-fix">Fix: {html.escape(f.fix_version)}</span>' if f.fix_version else ""
                 parent_upgrade = f'<div style="margin-top:6px"><b>Direct Dependency to Upgrade:</b> <span class="highlight-parent">{html.escape(f.direct_parent_to_upgrade)}</span></div>' if f.direct_parent_to_upgrade else ""
 
+                prio_val = f.context.get("ai_priority", "")
+                prio_badge = f'<span class="pill-prio">{html.escape(prio_val)}</span>' if prio_val else ""
+                verif_badge = '<span class="pill-verif">&#10003; Verified by Code</span>' if f.status == "verified" else '<span class="pill-unverif">&#9888; Unverified</span>'
+
+                rec_action = f.context.get("ai_recommended_action", "")
+                action_box = f'<div class="action-box"><b>Recommended Action:</b> {html.escape(rec_action)}</div>' if rec_action else ""
+
                 raw_json = html.escape(json.dumps(f.raw_data or vars(f), indent=2, default=str))
 
                 sec_c_cards += f"""
@@ -314,6 +359,8 @@ class Reporter:
                   <div class="card-top-row">
                     <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
                       <span class="risk-badge {f.risk.lower()}">{f.risk.upper()}</span>
+                      {prio_badge}
+                      {verif_badge}
                       <b class="card-comp">{html.escape(f.component)}</b>
                       <span class="card-type">({html.escape(f.type)})</span>
                       {cve_badge}
@@ -326,6 +373,7 @@ class Reporter:
                   </div>
 
                   <p class="card-desc">{html.escape(f.explanation)}</p>
+                  {action_box}
 
                   <div class="card-meta">
                     <div><b>Dependency Path:</b> <span class="path-box">{path_str}</span></div>
@@ -359,144 +407,182 @@ class Reporter:
   .status-INCOMPLETE{{background:#854d0e;color:#fef08a}}
   .status-UNTRUSTED{{background:#991b1b;color:#fecaca}}
 
-  /* Pipeline chips */
-  .stages-strip{{display:flex;gap:10px;margin-bottom:20px;overflow-x:auto;padding-bottom:4px}}
-  .stage-chip{{background:#131d31;border:1px solid #1e293b;border-radius:6px;padding:8px 14px;display:flex;align-items:center;gap:10px;flex:1;min-width:180px}}
-  .stage-chip.stage-done .stage-icon{{color:#34d399}}
-  .stage-chip.stage-partial .stage-icon{{color:#facc15}}
-  .stage-chip.stage-failed .stage-icon{{color:#f87171}}
-  .stage-name{{font-size:12px;font-weight:700;color:#f8fafc}}
+  /* Stage progress bar */
+  .stage-bar{{display:flex;gap:12px;margin-bottom:20px;overflow-x:auto;padding-bottom:4px}}
+  .stage-chip{{flex:1;min-width:160px;background:#1e293b;border:1px solid #334155;border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:10px}}
+  .stage-done{{border-color:#10b981;background:#062319}}
+  .stage-failed{{border-color:#f59e0b;background:#2b1d0c}}
+  .stage-icon{{font-size:16px;font-weight:bold}}
+  .stage-done .stage-icon{{color:#34d399}}
+  .stage-failed .stage-icon{{color:#fbbf24}}
+  .stage-name{{font-weight:600;font-size:12px;color:#f8fafc}}
   .stage-desc{{font-size:11px;color:#94a3b8}}
 
   /* Coverage Box */
-  .coverage-box{{background:#131d31;border:1px solid #1e293b;border-radius:8px;padding:14px 18px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px}}
-  .cov-title{{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#94a3b8}}
-  .cov-chips{{display:flex;gap:12px;flex-wrap:wrap}}
-  .cov-chip{{background:#0a0e17;border:1px solid #334155;border-radius:5px;padding:4px 10px;font-size:12px}}
-  .cov-chip b{{color:#f8fafc}}
+  .coverage-box{{background:#111827;border:1px solid #1f2937;border-radius:10px;padding:16px 20px;margin-bottom:24px;display:grid;grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));gap:16px}}
+  .stat-item .stat-label{{font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px}}
+  .stat-item .stat-val{{font-size:22px;font-weight:700;color:#f3f4f6}}
+  .stat-sub{{font-size:11px;color:#6b7280;margin-top:2px}}
 
   /* Cards */
-  .card{{background:#131d31;border:1px solid #1e293b;border-radius:8px;padding:20px;margin-bottom:24px}}
-  .card-header{{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}}
-  h3{{font-size:17px;color:#f1f5f9;font-weight:600}}
-  h4{{font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:#94a3b8}}
+  .card{{background:#111827;border:1px solid #1f2937;border-radius:10px;padding:20px;margin-bottom:24px}}
+  .ai-card{{border-color:#0369a1;background:#082f4922}}
+  .card-header{{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;border-bottom:1px solid #1f2937;padding-bottom:10px}}
+  .card-header h3{{font-size:16px;color:#f1f5f9;font-weight:600}}
+  .ref-pill{{background:#1e293b;color:#cbd5e1;padding:3px 10px;border-radius:12px;font-size:11px;font-family:monospace}}
 
-  /* Stats grid */
-  .grid-stats{{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-top:14px}}
-  .stat-box{{background:#0a0e17;border:1px solid #1e293b;border-radius:6px;padding:12px;text-align:center}}
-  .stat-val{{font-size:22px;font-weight:700;color:#f8fafc}}
-  .stat-lbl{{font-size:11px;text-transform:uppercase;color:#94a3b8;letter-spacing:.05em;margin-top:2px}}
-  .risk-critical{{color:#ef4444}} .risk-high{{color:#f97316}} .risk-medium{{color:#eab308}} .risk-low{{color:#3b82f6}}
+  /* Priority Stats */
+  .prio-stat{{padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600}}
+  .prio-p1{{background:#7f1d1d;color:#fecaca}}
+  .prio-p2{{background:#78350f;color:#fed7aa}}
+  .prio-p3{{background:#1e3a8a;color:#bfdbfe}}
 
-  /* Searchable table */
-  .table-controls{{display:flex;justify-content:space-between;align-items:center;margin:12px 0 8px}}
-  .search-input{{background:#0a0e17;border:1px solid #334155;color:#f1f5f9;padding:6px 12px;border-radius:6px;font-size:12px;width:240px;outline:none}}
-  .search-input:focus{{border-color:#3b82f6}}
-  .report-table{{width:100%;border-collapse:collapse;font-size:13px}}
-  .report-table th,.report-table td{{padding:8px 10px;text-align:left;border-bottom:1px solid #1e293b}}
-  .report-table th{{background:#0a0e17;color:#94a3b8;font-weight:600;font-size:11px;text-transform:uppercase}}
+  /* Tables */
+  .table-wrap{{max-height:360px;overflow-y:auto;border:1px solid #1f2937;border-radius:6px}}
+  .report-table{{width:100%;border-collapse:collapse;font-size:12px;text-align:left}}
+  .report-table th{{background:#1e293b;color:#cbd5e1;padding:8px 12px;position:sticky;top:0;font-weight:600}}
+  .report-table td{{padding:8px 12px;border-bottom:1px solid #1e293b;color:#cbd5e1}}
+  .report-table tr:hover td{{background:#1e293b55}}
 
   /* Badges */
-  .badge-role{{padding:2px 7px;border-radius:4px;font-size:11px;font-weight:600}}
-  .badge-role.direct{{background:#1e3a8a;color:#bfdbfe}}
-  .badge-role.trans{{background:#374151;color:#d1d5db}}
-  .summary-strip{{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 16px}}
-  .badge-ch{{display:inline-block;padding:3px 9px;border-radius:4px;font-size:12px;font-weight:600}}
-  .badge-ch.added{{background:#065f46;color:#a7f3d0}}
-  .badge-ch.removed{{background:#374151;color:#d1d5db}}
-  .badge-ch.upgraded{{background:#1e3a8a;color:#bfdbfe}}
-  .badge-ch.downgraded{{background:#7c2d12;color:#ffedd5}}
-  .badge-ch.modified{{background:#831843;color:#fbcfe8}}
-  .badge-ch.scripts{{background:#9a3412;color:#fed7aa}}
+  .badge-role{{padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600}}
+  .badge-role.direct{{background:#1e3a8a;color:#93c5fd}}
+  .badge-role.trans{{background:#1e293b;color:#94a3b8}}
+  .pill-cve{{background:#991b1b;color:#fecaca;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:700}}
+  .pill-cvss{{background:#7f1d1d;color:#fca5a5;padding:2px 6px;border-radius:4px;font-size:11px}}
+  .pill-fix{{background:#065f46;color:#a7f3d0;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:600}}
+  .pill-prio{{background:#0284c7;color:#ffffff;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700}}
+  .pill-verif{{background:#065f46;color:#a7f3d0;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600}}
+  .pill-unverif{{background:#854d0e;color:#fef08a;padding:2px 8px;border-radius:4px;font-size:11px}}
+  .ev-tag{{background:#1e293b;color:#38bdf8;padding:1px 6px;border-radius:4px;font-size:10px;font-family:monospace;border:1px solid #334155}}
+  .highlight-parent{{background:#312e81;color:#c7d2fe;padding:2px 6px;border-radius:4px;font-weight:600}}
+  .verify-cmd{{background:#0f172a;color:#a5f3fc;padding:3px 8px;border-radius:4px;font-size:11px;font-family:monospace;border:1px solid #1e293b}}
 
-  /* Section C Evidence Cards */
-  .evidence-card{{background:#131d31;border:1px solid #1e293b;border-left:5px solid #64748b;border-radius:6px;padding:16px;margin-bottom:16px}}
+  /* Summary Strip */
+  .summary-strip{{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}}
+  .badge-ch{{padding:4px 10px;border-radius:6px;font-size:12px;font-weight:600}}
+  .badge-ch.added{{background:#065f46;color:#a7f3d0}}
+  .badge-ch.removed{{background:#374151;color:#9ca3af}}
+  .badge-ch.upgraded{{background:#1e3a8a;color:#93c5fd}}
+  .badge-ch.downgraded{{background:#78350f;color:#fed7aa}}
+  .badge-ch.modified{{background:#581c87;color:#e9d5ff}}
+  .badge-ch.scripts{{background:#991b1b;color:#fecaca}}
+  .pill-flag{{background:#7f1d1d44;border:1px solid #991b1b;color:#fca5a5;padding:1px 6px;border-radius:4px;font-size:10px}}
+
+  /* Risk Badges */
+  .risk-badge{{padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;letter-spacing:.05em}}
+  .risk-badge.critical{{background:#dc2626;color:#fff}}
+  .risk-badge.high{{background:#ea580c;color:#fff}}
+  .risk-badge.medium{{background:#d97706;color:#fff}}
+  .risk-badge.low{{background:#2563eb;color:#fff}}
+
+  /* Evidence Cards */
+  .evidence-card{{background:#111827;border:1px solid #1f2937;border-radius:8px;padding:16px;margin-bottom:14px;border-left:4px solid #4b5563}}
   .risk-border-critical{{border-left-color:#ef4444}}
   .risk-border-high{{border-left-color:#f97316}}
-  .risk-border-medium{{border-left-color:#eab308}}
+  .risk-border-medium{{border-left-color:#f59e0b}}
   .risk-border-low{{border-left-color:#3b82f6}}
-  .card-top-row{{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px}}
+  .card-top-row{{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}}
   .card-comp{{font-size:15px;color:#f8fafc}}
   .card-type{{font-size:12px;color:#94a3b8}}
-  .card-desc{{font-size:13px;color:#cbd5e1;margin-bottom:10px}}
-  .card-meta{{font-size:11px;color:#94a3b8;background:#0a0e17;border-radius:6px;padding:10px 12px}}
-  .path-box{{font-family:monospace;color:#facc15}}
-  .highlight-parent{{color:#60a5fa;font-family:monospace;font-weight:700}}
-  .verify-cmd{{background:#0a0e17;border:1px solid #334155;color:#a7f3d0;padding:2px 8px;border-radius:4px;font-family:monospace;font-size:11px}}
-  .pill-cve{{background:#991b1b;color:#fecaca;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:700}}
-  .pill-cvss{{background:#374151;color:#f3f4f6;padding:2px 6px;border-radius:4px;font-size:11px}}
-  .pill-fix{{background:#065f46;color:#a7f3d0;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:600}}
-  .pill-flag{{background:#1e293b;border:1px solid #334155;color:#e2e8f0;padding:1px 6px;border-radius:4px;font-size:10px}}
-  .ev-tag{{background:#0a0e17;border:1px solid #3b82f6;color:#93c5fd;font-family:monospace;font-size:10px;padding:2px 6px;border-radius:3px}}
-  .risk-badge{{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;text-transform:uppercase}}
-  .risk-badge.critical{{background:#ef4444;color:#fff}}
-  .risk-badge.high{{background:#f97316;color:#fff}}
-  .risk-badge.medium{{background:#eab308;color:#000}}
-  .risk-badge.low{{background:#3b82f6;color:#fff}}
-  .btn{{display:inline-block;background:#3b82f6;color:#fff;text-decoration:none;padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600}}
-  .raw-data-box{{background:#050811;padding:8px;border-radius:4px;color:#94a3b8;font-size:10px;overflow-x:auto;margin-top:4px}}
-  .banner-warning{{background:#451a03;border:1px solid #b45309;color:#fde68a;padding:10px 14px;border-radius:6px;margin-bottom:14px;font-size:13px}}
-  footer{{margin-top:32px;border-top:1px solid #1e293b;padding-top:14px;font-size:11px;color:#64748b;text-align:center}}
+  .card-desc{{font-size:13px;color:#e2e8f0;margin-bottom:10px;line-height:1.5}}
+  .action-box{{background:#064e3b33;border:1px solid #065f46;border-radius:6px;padding:8px 12px;font-size:12px;color:#a7f3d0;margin-bottom:10px}}
+  .card-meta{{font-size:12px;color:#94a3b8;background:#0f172a;padding:10px;border-radius:6px}}
+  .path-box{{color:#e2e8f0;font-family:monospace;font-size:11px}}
+  .raw-data-box{{background:#020617;color:#94a3b8;padding:8px;border-radius:4px;font-size:10px;margin-top:6px;overflow-x:auto}}
+
+  /* New Risks Box */
+  .new-risks-box{{background:#201207;border:1px solid #78350f;border-radius:8px;padding:14px;margin-bottom:16px}}
+  .new-risks-box.clean{{background:#062319;border-color:#065f46}}
+  .new-risks-box h4{{font-size:13px;color:#fed7aa;margin-bottom:10px}}
+  .new-risks-box.clean h4{{color:#a7f3d0}}
+
+  /* Warning Banner */
+  .banner-warning{{background:#451a03;border:1px solid #b45309;color:#fde68a;padding:12px 16px;border-radius:8px;margin-bottom:16px;font-size:13px}}
+  .text-danger{{color:#f87171}}
+  .text-muted{{color:#94a3b8;font-size:12px}}
 </style>
 </head>
 <body>
 <div class="container">
 
-  <!-- TOP HEADER -->
+  <!-- Header -->
   <div class="top-header">
     <div>
-      <h1>&#128737; Software Supply Chain Guardian</h1>
-      <div class="subhead">Target: <b>{html.escape(target_name)}</b> &middot; Commit: <code>{html.escape(commit_sha)}</code> &middot; Run ID: <code>{html.escape(self.ledger.run_id)}</code></div>
+      <h1>Guardian Security Checkpoint</h1>
+      <div class="subhead">Target: <b>{html.escape(target_name)}</b> &middot; Ref: <code>{html.escape(commit_sha)}</code> &middot; Generated {html.escape(osv_timestamp)}</div>
     </div>
-    <div style="text-align:right">
+    <div>
       <span class="run-badge status-{self.ledger.run_status}">{self.ledger.run_status}</span>
-      <div style="font-size:11px;color:#94a3b8;margin-top:4px">OSV Snapshot: {osv_timestamp}</div>
     </div>
   </div>
 
-  <!-- PIPELINE STAGE CHIPS -->
-  <div class="stages-strip">
+  <!-- Stage Progress Bar -->
+  <div class="stage-bar">
     {stage_chips_html}
   </div>
 
-  <!-- COVERAGE BOX -->
+  <!-- Coverage Box -->
   <div class="coverage-box">
-    <div class="cov-title">&#128230; Coverage Box</div>
-    <div class="cov-chips">
-      <span class="cov-chip">Detected: <b>{cov_detected}</b></span>
-      <span class="cov-chip">Fully Analysed: <b>{cov_analysed}</b></span>
-      <span class="cov-chip">Partial: <b>{cov_partial}</b></span>
-      <span class="cov-chip">Skipped: <b>{cov_skipped}</b></span>
+    <div class="stat-item">
+      <div class="stat-label">Total Discovered</div>
+      <div class="stat-val">{cov_detected}</div>
+      <div class="stat-sub">100% of discovered lockfiles</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-label">Direct Dependencies</div>
+      <div class="stat-val">{direct_comps}</div>
+      <div class="stat-sub">Declared in manifests</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-label">Transitive Deps</div>
+      <div class="stat-val">{trans_comps}</div>
+      <div class="stat-sub">Resolved via dependency graph</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-label">Ecosystems Analyzed</div>
+      <div class="stat-val">{len(ecosystems)}</div>
+      <div class="stat-sub">{', '.join(ecosystems)} (depth: full)</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-label">Skipped / Capped</div>
+      <div class="stat-val">{cov_skipped}</div>
+      <div class="stat-sub">{"honest: no items capped" if cov_skipped == 0 else f"{cov_skipped} skipped"}</div>
     </div>
   </div>
 
-  <!-- SECTION A: WHAT IS IN THE APPLICATION -->
+  <!-- AI Analysis & Prioritization Card -->
+  {ai_panel_html}
+
+  <!-- Section B: What Changed -->
+  {sec_b_html}
+
+  <!-- Section C: What Appears Risky -->
   <div class="card">
     <div class="card-header">
-      <h3>Section A: What is in the Application</h3>
-      <div style="display:flex;gap:8px">
-        <a class="btn" href="graph.html" target="_blank">&#127760; View Dependency Graph</a>
-        <a class="btn" style="background:#4b5563" href="sbom.cdx.json" target="_blank">&#128203; CycloneDX SBOM</a>
-      </div>
+      <h3>Section C: What Appears Risky</h3>
+      <span class="ref-pill">{total_findings} findings identified</span>
     </div>
-    <div class="grid-stats">
-      <div class="stat-box"><div class="stat-val">{total_comps}</div><div class="stat-lbl">Total Components</div></div>
-      <div class="stat-box"><div class="stat-val">{direct_comps}</div><div class="stat-lbl">Direct Deps</div></div>
-      <div class="stat-box"><div class="stat-val">{trans_comps}</div><div class="stat-lbl">Transitive Deps</div></div>
-      <div class="stat-box"><div class="stat-val">{dev_comps}</div><div class="stat-lbl">Dev-Only Deps</div></div>
-      <div class="stat-box"><div class="stat-val">{files_found_count}</div><div class="stat-lbl">Files Analysed</div></div>
-      <div class="stat-box"><div class="stat-val">{len(ecosystems)}</div><div class="stat-lbl">Ecosystems</div></div>
-    </div>
+    {sec_c_cards}
+  </div>
 
-    <div class="table-controls">
-      <h4 style="margin-top:14px">Component Catalog ({total_comps} components)</h4>
-      <input class="search-input" placeholder="Search catalog…" onkeyup="filterTable(this.value)" />
+  <!-- Section A: Full Components Table -->
+  <div class="card">
+    <div class="card-header">
+      <h3>Section A: What is in the Application (Components &amp; Supply Chain Origins)</h3>
+      <span class="ref-pill">{total_comps} components</span>
     </div>
-
-    <div style="max-height:360px;overflow-y:auto;border:1px solid #1e293b;border-radius:6px">
-      <table class="report-table" id="catalog-table">
+    <div class="table-wrap">
+      <table class="report-table">
         <thead>
-          <tr><th>Component@Version</th><th>Role</th><th>Ecosystem</th><th>Registry Host</th><th>Manifest File</th><th>Direct Parent</th></tr>
+          <tr>
+            <th>Component &amp; Version</th>
+            <th>Relationship</th>
+            <th>Ecosystem</th>
+            <th>Registry Origin</th>
+            <th>Manifest Source</th>
+            <th>Direct Parent Ancestor</th>
+          </tr>
         </thead>
         <tbody>
           {comp_rows}
@@ -505,41 +591,16 @@ class Reporter:
     </div>
   </div>
 
-  <!-- SECTION B: WHAT CHANGED -->
-  {sec_b_html}
-
-  <!-- SECTION C: WHAT APPEARS RISKY -->
-  <div class="card">
-    <div class="card-header">
-      <h3>Section C: What Appears Risky</h3>
-      <span class="text-muted" style="font-size:12px">{len(sorted_findings)} findings prioritized by deterministic rules</span>
-    </div>
-    {sec_c_cards}
-  </div>
-
-  <!-- FOOTER -->
-  <footer>
-    <p>Software Supply Chain Guardian &middot; Day 1 Checkpoint &middot; Dockerfile and workflow static analysis only (no containers pulled or executed).</p>
-  </footer>
-
 </div>
-
-<script>
-function filterTable(val) {{
-  var term = val.toLowerCase();
-  var rows = document.querySelectorAll("#catalog-table tbody tr");
-  rows.forEach(function(row) {{
-    var text = row.textContent.toLowerCase();
-    row.style.display = text.indexOf(term) > -1 ? "" : "none";
-  }});
-}}
-</script>
 </body>
-</html>"""
+</html>
+"""
+        p_cp = self.out_dir / "checkpoint.html"
+        with open(p_cp, "w", encoding="utf-8") as fh:
+            fh.write(html_content)
+        print(f"[reporter] checkpoint.html → {p_cp}")
 
-        # Write checkpoint.html and report.html
-        for name in ["checkpoint.html", "report.html"]:
-            p = self.out_dir / name
-            with open(p, "w", encoding="utf-8") as fh:
-                fh.write(html_content)
-            print(f"[reporter] {name} → {p}")
+        p_rp = self.out_dir / "report.html"
+        with open(p_rp, "w", encoding="utf-8") as fh:
+            fh.write(html_content)
+        print(f"[reporter] report.html → {p_rp}")

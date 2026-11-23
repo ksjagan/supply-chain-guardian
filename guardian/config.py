@@ -5,11 +5,55 @@ All tunable knobs in one place – easy for a beginner to find.
 import os
 from pathlib import Path
 
-# ── LLM Models ───────────────────────────────────────────────────────────────
-# Set these in your .env file or shell before running.
-MODEL_CHEAP = os.environ.get("GUARDIAN_MODEL_CHEAP", "claude-haiku-4-5")
-MODEL_BIG   = os.environ.get("GUARDIAN_MODEL_BIG",   "claude-sonnet-4-5")
+# ── Paths ─────────────────────────────────────────────────────────────────────
+ROOT_DIR  = Path(__file__).resolve().parent.parent   # project root
+DATA_DIR  = ROOT_DIR / "guardian" / "data"
+CACHE_DIR = ROOT_DIR / "cache"
+OUT_DIR   = ROOT_DIR / "out"
+FIXTURES_DIR = ROOT_DIR / "fixtures"
+
+# ── Auto-load .env if present ──────────────────────────────────────────────────
+def _load_env_file():
+    env_path = ROOT_DIR / ".env"
+    if env_path.exists():
+        try:
+            with open(env_path, "r", encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if not line or line.startswith("#"):
+                        continue
+                    if "=" in line:
+                        k, v = line.split("=", 1)
+                        k = k.strip()
+                        v = v.strip().strip('"').strip("'")
+                        if k and not os.environ.get(k):
+                            os.environ[k] = v
+        except Exception:
+            pass
+
+_load_env_file()
+
+# ── LLM Models & API Keys ─────────────────────────────────────────────────────
+# Supports Anthropic, Gemini, or OpenAI – whichever API key you provide!
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
+GEMINI_API_KEY    = os.environ.get("GEMINI_API_KEY", "")
+OPENAI_API_KEY    = os.environ.get("OPENAI_API_KEY", "")
+
+# Preferred models
+MODEL_ANTHROPIC = os.environ.get("GUARDIAN_MODEL_ANTHROPIC", "claude-3-5-haiku-20241022")
+MODEL_GEMINI    = os.environ.get("GUARDIAN_MODEL_GEMINI",    "gemini-1.5-flash")
+MODEL_OPENAI    = os.environ.get("GUARDIAN_MODEL_OPENAI",    "gpt-4o-mini")
+
+# Active provider detection
+def get_active_provider() -> tuple[str, str, str]:
+    """Returns (provider, api_key, model_name)."""
+    if os.environ.get("GEMINI_API_KEY"):
+        return "gemini", os.environ["GEMINI_API_KEY"], MODEL_GEMINI
+    if os.environ.get("ANTHROPIC_API_KEY"):
+        return "anthropic", os.environ["ANTHROPIC_API_KEY"], MODEL_ANTHROPIC
+    if os.environ.get("OPENAI_API_KEY"):
+        return "openai", os.environ["OPENAI_API_KEY"], MODEL_OPENAI
+    return "none", "", ""
 
 # ── Clone / repo limits ───────────────────────────────────────────────────────
 CLONE_TIMEOUT_S   = 60      # seconds before git clone is killed
@@ -31,13 +75,6 @@ BUDGET_REMEDIATOR_TOKENS=  6_000
 BUDGET_GLOBAL_TOKENS    = 40_000
 LLM_MAX_REPAIRS         = 2
 READER_MAX_ITEMS        = 15
-
-# ── Paths ─────────────────────────────────────────────────────────────────────
-ROOT_DIR  = Path(__file__).resolve().parent.parent   # project root
-DATA_DIR  = ROOT_DIR / "guardian" / "data"
-CACHE_DIR = ROOT_DIR / "cache"
-OUT_DIR   = ROOT_DIR / "out"
-FIXTURES_DIR = ROOT_DIR / "fixtures"
 
 # OSV / KEV endpoints
 OSV_QUERYBATCH_URL = "https://api.osv.dev/v1/querybatch"

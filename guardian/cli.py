@@ -10,6 +10,7 @@ Commands:
 """
 import argparse
 import json
+import os
 import sys
 import uuid
 from datetime import datetime
@@ -36,7 +37,17 @@ def cmd_checkpoint(args) -> None:
         else:
             since_ref = baseline_val
 
-    orch = Orchestrator(run_id=run_id, ai_enabled=False, custom_out=custom_out)
+    # Set explicit api-key if passed
+    if getattr(args, "api_key", None):
+        key = args.api_key.strip()
+        if key.startswith("AIza"):
+            os.environ["GEMINI_API_KEY"] = key
+        elif key.startswith("sk-ant"):
+            os.environ["ANTHROPIC_API_KEY"] = key
+        else:
+            os.environ["OPENAI_API_KEY"] = key
+
+    orch = Orchestrator(run_id=run_id, ai_enabled=not getattr(args, "no_ai", False), custom_out=custom_out)
     orch.scan(
         target=args.target,
         since=since_ref,
@@ -47,6 +58,15 @@ def cmd_checkpoint(args) -> None:
 
 
 def cmd_scan(args) -> None:
+    if getattr(args, "api_key", None):
+        key = args.api_key.strip()
+        if key.startswith("AIza"):
+            os.environ["GEMINI_API_KEY"] = key
+        elif key.startswith("sk-ant"):
+            os.environ["ANTHROPIC_API_KEY"] = key
+        else:
+            os.environ["OPENAI_API_KEY"] = key
+
     run_id = datetime.now().strftime("%Y%m%d_%H%M%S") + "_" + uuid.uuid4().hex[:6]
     orch = Orchestrator(run_id=run_id, ai_enabled=not args.no_ai)
     orch.scan(
@@ -266,11 +286,13 @@ def main() -> None:
     p_cp.add_argument("--out", default="", help="Custom output directory")
     p_cp.add_argument("--demo", action="store_true", help="Run with cached offline data (no internet required)")
     p_cp.add_argument("--no-ai", action="store_true", help="Disable all LLM calls")
+    p_cp.add_argument("--api-key", default="", help="LLM API key (Gemini, Anthropic, or OpenAI)")
 
     # ── scan ──────────────────────────────────────────────────────────
     p_scan = sub.add_parser("scan", help="Scan a GitHub URL or local folder")
     p_scan.add_argument("target", help="GitHub URL (https://github.com/...) or local path")
     p_scan.add_argument("--no-ai", action="store_true", help="Disable all LLM calls")
+    p_scan.add_argument("--api-key", default="", help="LLM API key (Gemini, Anthropic, or OpenAI)")
     p_scan.add_argument("--since", default="", help="Git ref for lockfile diff (e.g. HEAD~1, commit, or 'last')")
     p_scan.add_argument("--remediate", action="store_true", help="Run Remediator after scan")
     p_scan.add_argument("--demo-cache", action="store_true", help="Use pre-warmed caches")
