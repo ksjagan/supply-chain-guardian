@@ -112,11 +112,10 @@ class LLMClient:
     def _call_gemini(self, system: str, user: str, temp: float) -> str:
         # Fallback list of models in order of preference
         models_to_try = [
-            self.model,
-            "gemini-3.5-flash",
             "gemma-4-26b-a4b-it",
+            "gemini-3.5-flash",
             "gemini-3.8-flash",
-            "gemini-2.5-flash",
+            self.model,
         ]
         # remove duplicates while preserving order
         seen = set()
@@ -137,7 +136,7 @@ class LLMClient:
         for m in models:
             url = f"https://generativelanguage.googleapis.com/v1beta/models/{m}:generateContent?key={self.api_key}"
             try:
-                resp = requests.post(url, headers=headers, json=payload, timeout=25)
+                resp = requests.post(url, headers=headers, json=payload, timeout=6)
                 if resp.status_code == 200:
                     data = resp.json()
                     candidates = data.get("candidates", [])

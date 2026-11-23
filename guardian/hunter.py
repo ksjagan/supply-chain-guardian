@@ -4,6 +4,7 @@ Performs OSV vulnerability lookup, anomaly detection, typosquatting checks,
 Dockerfile and workflow static analysis, Sentinel canary verification,
 and baseline change detection.
 """
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import json
 import os
 import re
@@ -39,17 +40,20 @@ def _levenshtein(s1: str, s2: str) -> int:
 
 
 def _is_typosquat(cand: str, target: str) -> Tuple[bool, int]:
-    d = _levenshtein(cand, target)
-    if d in (1, 2) and len(target) >= 4 and len(cand) >= 4:
-        return True, d
+    len_diff = abs(len(cand) - len(target))
+    if len_diff <= 2 and len(target) >= 4 and len(cand) >= 4:
+        d = _levenshtein(cand, target)
+        if d in (1, 2):
+            return True, d
 
     # Split on - or _ to handle affix tricks (e.g. lodas-core)
-    parts = re.split(r"[-_]", cand)
-    for p in parts:
-        if len(p) >= 4:
-            d_part = _levenshtein(p, target)
-            if d_part in (1, 2):
-                return True, d_part
+    if "-" in cand or "_" in cand:
+        parts = re.split(r"[-_]", cand)
+        for p in parts:
+            if len(p) >= 4 and abs(len(p) - len(target)) <= 2:
+                d_part = _levenshtein(p, target)
+                if d_part in (1, 2):
+                    return True, d_part
 
     return False, 999
 
@@ -67,6 +71,7 @@ class Hunter:
         self.top_packages: Set[str] = self._load_top_packages()
         self.vuln_data_unavailable = False
         self.osv_cache: Dict[str, list] = self._load_osv_cache()
+        self._vid_cache: Dict[str, dict] = {}
 
     def _load_top_packages(self) -> Set[str]:
         pkg_file = DATA_DIR / "top_npm_packages.txt"
@@ -181,21 +186,34 @@ class Hunter:
                     raise requests.RequestException(f"OSV batch query returned HTTP {resp.status_code}")
 
                 results = resp.json().get("results", [])
+
+                # 1. Collect unique vulnerability IDs to fetch in parallel
+                unique_vids = set()
+                for res in results:
+                    for v in res.get("vulns", []):
+                        vid = v.get("id")
+                        if vid and vid not in self._vid_cache:
+                            unique_vids.add(vid)
+
+                if unique_vids:
+                    def _fetch_vid(vid_to_get: str):
+                        try:
+                            v_resp = requests.get(OSV_VULN_URL.format(id=vid_to_get), timeout=4)
+                            if v_resp.status_code == 200:
+                                return vid_to_get, v_resp.json()
+                        except Exception:
+                            pass
+                        return vid_to_get, None
+
+                    with ThreadPoolExecutor(max_workers=20) as executor:
+                        for vid_done, data in executor.map(_fetch_vid, unique_vids):
+                            if data:
+                                self._vid_cache[vid_done] = data
+
+                # 2. Build vulnerability records for each component
                 for c, res in zip(chunk, results):
                     vulns_raw = res.get("vulns", [])
-                    full_vulns = []
-                    for v in vulns_raw:
-                        vid = v.get("id")
-                        if vid:
-                            try:
-                                v_resp = requests.get(OSV_VULN_URL.format(id=vid), timeout=5)
-                                if v_resp.status_code == 200:
-                                    full_vulns.append(v_resp.json())
-                                else:
-                                    full_vulns.append(v)
-                            except Exception:
-                                full_vulns.append(v)
-
+                    full_vulns = [self._vid_cache.get(v.get("id"), v) for v in vulns_raw]
                     key = f"{c.name}@{c.version}"
                     self.osv_cache[key] = full_vulns
                     self._record_osv_findings(c, full_vulns)
