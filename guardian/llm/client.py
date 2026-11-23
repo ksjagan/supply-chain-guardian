@@ -1,13 +1,13 @@
 """
 Unified LLM Client.
 Supports Google Gemini, Anthropic Claude, and OpenAI via direct HTTP (requests).
-Features SHA-256 prompt response caching, token usage tracking, and automatic schema parsing.
+Features SHA-256 prompt response caching, multi-model fallback, and automatic schema parsing.
 """
 import hashlib
 import json
 import os
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import requests
 
@@ -101,7 +101,6 @@ class LLMClient:
         try:
             return json.loads(clean)
         except json.JSONDecodeError as exc:
-            # Attempt basic extraction of outer { ... } or [ ... ]
             start = clean.find("{")
             end = clean.rfind("}")
             if start != -1 and end != -1:
@@ -111,7 +110,18 @@ class LLMClient:
     # ── Providers ─────────────────────────────────────────────────────────────
 
     def _call_gemini(self, system: str, user: str, temp: float) -> str:
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/{self.model}:generateContent?key={self.api_key}"
+        # Fallback list of models in order of preference
+        models_to_try = [
+            self.model,
+            "gemini-3.5-flash",
+            "gemma-4-26b-a4b-it",
+            "gemini-3.8-flash",
+            "gemini-2.5-flash",
+        ]
+        # remove duplicates while preserving order
+        seen = set()
+        models = [m for m in models_to_try if m and not (m in seen or seen.add(m))]
+
         headers = {"Content-Type": "application/json"}
         payload = {
             "contents": [
@@ -122,14 +132,26 @@ class LLMClient:
                 "maxOutputTokens": 4096,
             }
         }
-        resp = requests.post(url, headers=headers, json=payload, timeout=30)
-        resp.raise_for_status()
-        data = resp.json()
-        candidates = data.get("candidates", [])
-        if not candidates:
-            raise RuntimeError(f"Gemini returned no candidates: {data}")
-        parts = candidates[0].get("content", {}).get("parts", [])
-        return "".join(p.get("text", "") for p in parts)
+
+        last_error = None
+        for m in models:
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{m}:generateContent?key={self.api_key}"
+            try:
+                resp = requests.post(url, headers=headers, json=payload, timeout=25)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    candidates = data.get("candidates", [])
+                    if candidates:
+                        parts = candidates[0].get("content", {}).get("parts", [])
+                        text = "".join(p.get("text", "") for p in parts).strip()
+                        if text:
+                            self.model = m  # stick with working model
+                            return text
+                last_error = f"Model {m} returned HTTP {resp.status_code}"
+            except Exception as e:
+                last_error = str(e)
+
+        raise RuntimeError(f"All Gemini models failed. Last error: {last_error}")
 
     def _call_anthropic(self, system: str, user: str, temp: float) -> str:
         url = "https://api.anthropic.com/v1/messages"

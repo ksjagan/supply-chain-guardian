@@ -41,7 +41,7 @@ OPENAI_API_KEY    = os.environ.get("OPENAI_API_KEY", "")
 
 # Preferred models
 MODEL_ANTHROPIC = os.environ.get("GUARDIAN_MODEL_ANTHROPIC", "claude-3-5-haiku-20241022")
-MODEL_GEMINI    = os.environ.get("GUARDIAN_MODEL_GEMINI",    "gemini-1.5-flash")
+MODEL_GEMINI    = os.environ.get("GUARDIAN_MODEL_GEMINI",    "gemini-2.5-flash")
 MODEL_OPENAI    = os.environ.get("GUARDIAN_MODEL_OPENAI",    "gpt-4o-mini")
 
 # Active provider detection

@@ -164,38 +164,41 @@ class Hunter:
                 self.osv_cache[f"{c.name}@{c.version}"] = []
             return
 
-        # Query OSV Batch API
+        # Query OSV Batch API in chunks (OSV limits queries to max 1,000 per request)
+        chunk_size = 400
         try:
-            print(f"[hunter] Querying OSV for {len(needed_queries)} packages …")
-            batch_payload = {
-                "queries": [
-                    {"package": {"name": c.name, "ecosystem": "npm"}, "version": c.version}
-                    for c in needed_queries
-                ]
-            }
-            resp = requests.post(OSV_QUERYBATCH_URL, json=batch_payload, timeout=8)
-            if resp.status_code != 200:
-                raise requests.RequestException(f"OSV batch query returned HTTP {resp.status_code}")
+            print(f"[hunter] Querying OSV for {len(needed_queries)} packages in chunks of {chunk_size} …")
+            for i in range(0, len(needed_queries), chunk_size):
+                chunk = needed_queries[i : i + chunk_size]
+                batch_payload = {
+                    "queries": [
+                        {"package": {"name": c.name, "ecosystem": "npm"}, "version": c.version}
+                        for c in chunk
+                    ]
+                }
+                resp = requests.post(OSV_QUERYBATCH_URL, json=batch_payload, timeout=15)
+                if resp.status_code != 200:
+                    raise requests.RequestException(f"OSV batch query returned HTTP {resp.status_code}")
 
-            results = resp.json().get("results", [])
-            for c, res in zip(needed_queries, results):
-                vulns_raw = res.get("vulns", [])
-                full_vulns = []
-                for v in vulns_raw:
-                    vid = v.get("id")
-                    if vid:
-                        try:
-                            v_resp = requests.get(OSV_VULN_URL.format(id=vid), timeout=5)
-                            if v_resp.status_code == 200:
-                                full_vulns.append(v_resp.json())
-                            else:
+                results = resp.json().get("results", [])
+                for c, res in zip(chunk, results):
+                    vulns_raw = res.get("vulns", [])
+                    full_vulns = []
+                    for v in vulns_raw:
+                        vid = v.get("id")
+                        if vid:
+                            try:
+                                v_resp = requests.get(OSV_VULN_URL.format(id=vid), timeout=5)
+                                if v_resp.status_code == 200:
+                                    full_vulns.append(v_resp.json())
+                                else:
+                                    full_vulns.append(v)
+                            except Exception:
                                 full_vulns.append(v)
-                        except Exception:
-                            full_vulns.append(v)
 
-                key = f"{c.name}@{c.version}"
-                self.osv_cache[key] = full_vulns
-                self._record_osv_findings(c, full_vulns)
+                    key = f"{c.name}@{c.version}"
+                    self.osv_cache[key] = full_vulns
+                    self._record_osv_findings(c, full_vulns)
 
             self._save_osv_cache()
 
