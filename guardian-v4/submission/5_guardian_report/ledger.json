@@ -1,0 +1,316 @@
+[
+  {
+    "id": "E-001",
+    "kind": "vuln",
+    "source": "osv",
+    "data": {
+      "name": "lodash",
+      "version": "4.17.15",
+      "vuln_id": "GHSA-p6mc-m468-83gw",
+      "cves": [
+        "CVE-2020-8203"
+      ],
+      "severity": "high",
+      "cvss_est": 7.4,
+      "fixed": [
+        "4.17.21"
+      ],
+      "direct": true,
+      "dev": false
+    }
+  },
+  {
+    "id": "E-002",
+    "kind": "epss",
+    "source": "first-epss",
+    "data": {
+      "name": "lodash",
+      "version": "4.17.15",
+      "cve": "CVE-2020-8203",
+      "epss": 0.421
+    }
+  },
+  {
+    "id": "E-003",
+    "kind": "dependency_path",
+    "source": "mapper",
+    "data": {
+      "name": "lodash",
+      "version": "4.17.15",
+      "path": [
+        "(app)",
+        "lodash@4.17.15"
+      ],
+      "direct": true,
+      "dev": false
+    }
+  },
+  {
+    "id": "E-004",
+    "kind": "reachability",
+    "source": "text-search",
+    "data": {
+      "name": "lodash",
+      "version": "4.17.15",
+      "result": "imported"
+    }
+  },
+  {
+    "id": "E-005",
+    "kind": "vuln",
+    "source": "osv",
+    "data": {
+      "name": "minimist",
+      "version": "1.2.0",
+      "vuln_id": "GHSA-xvch-5ox4-984h",
+      "cves": [
+        "CVE-2020-7598"
+      ],
+      "severity": "medium",
+      "cvss_est": 5.5,
+      "fixed": [
+        "1.2.6"
+      ],
+      "direct": true,
+      "dev": false
+    }
+  },
+  {
+    "id": "E-006",
+    "kind": "epss",
+    "source": "first-epss",
+    "data": {
+      "name": "minimist",
+      "version": "1.2.0",
+      "cve": "CVE-2020-7598",
+      "epss": 0.15
+    }
+  },
+  {
+    "id": "E-007",
+    "kind": "dependency_path",
+    "source": "mapper",
+    "data": {
+      "name": "minimist",
+      "version": "1.2.0",
+      "path": [
+        "(app)",
+        "minimist@1.2.0"
+      ],
+      "direct": true,
+      "dev": false
+    }
+  },
+  {
+    "id": "E-008",
+    "kind": "reachability",
+    "source": "text-search",
+    "data": {
+      "name": "minimist",
+      "version": "1.2.0",
+      "result": "not found"
+    }
+  },
+  {
+    "id": "E-009",
+    "kind": "vuln",
+    "source": "osv",
+    "data": {
+      "name": "qs",
+      "version": "6.5.2",
+      "vuln_id": "GHSA-hrpp-h998-j3pp",
+      "cves": [
+        "CVE-2017-1000048"
+      ],
+      "severity": "high",
+      "cvss_est": 8.0,
+      "fixed": [
+        "6.5.3"
+      ],
+      "direct": false,
+      "dev": false
+    }
+  },
+  {
+    "id": "E-010",
+    "kind": "kev",
+    "source": "cisa-kev",
+    "data": {
+      "name": "qs",
+      "version": "6.5.2",
+      "cve": "CVE-2017-1000048",
+      "result": "listed in CISA KEV"
+    }
+  },
+  {
+    "id": "E-011",
+    "kind": "epss",
+    "source": "first-epss",
+    "data": {
+      "name": "qs",
+      "version": "6.5.2",
+      "cve": "CVE-2017-1000048",
+      "epss": 0.852
+    }
+  },
+  {
+    "id": "E-012",
+    "kind": "dependency_path",
+    "source": "mapper",
+    "data": {
+      "name": "qs",
+      "version": "6.5.2",
+      "path": [
+        "(app)",
+        "express@4.17.1",
+        "qs@6.5.2"
+      ],
+      "direct": false,
+      "dev": false
+    }
+  },
+  {
+    "id": "E-013",
+    "kind": "typosquat",
+    "source": "name-check",
+    "data": {
+      "name": "recat",
+      "version": "1.0.0",
+      "similar_to": "react",
+      "distance": 2
+    }
+  },
+  {
+    "id": "E-014",
+    "kind": "install_script",
+    "source": "lockfile",
+    "data": {
+      "name": "recat",
+      "version": "1.0.0",
+      "install_script": true
+    }
+  },
+  {
+    "id": "E-015",
+    "kind": "dependency_path",
+    "source": "mapper",
+    "data": {
+      "name": "recat",
+      "version": "1.0.0",
+      "path": [
+        "(app)",
+        "recat@1.0.0"
+      ],
+      "direct": true,
+      "dev": false
+    }
+  },
+  {
+    "id": "E-016",
+    "kind": "dockerfile_issue",
+    "source": "dockerfile-scan",
+    "data": {
+      "rule": "docker_latest_tag",
+      "file": "Dockerfile",
+      "line": 1,
+      "text": "FROM node:latest"
+    }
+  },
+  {
+    "id": "E-017",
+    "kind": "dockerfile_issue",
+    "source": "dockerfile-scan",
+    "data": {
+      "rule": "docker_secret_in_env",
+      "file": "Dockerfile",
+      "line": 3,
+      "text": "ENV AWS_SECRET_ACCESS_KEY=[REDACTED]"
+    }
+  },
+  {
+    "id": "E-018",
+    "kind": "dockerfile_issue",
+    "source": "dockerfile-scan",
+    "data": {
+      "rule": "docker_curl_pipe_sh",
+      "file": "Dockerfile",
+      "line": 7,
+      "text": "curl -sSL https://install.example.com/setup.sh | sh"
+    }
+  },
+  {
+    "id": "E-019",
+    "kind": "dockerfile_issue",
+    "source": "dockerfile-scan",
+    "data": {
+      "rule": "docker_no_user",
+      "file": "Dockerfile",
+      "line": 1,
+      "text": "no non-root USER set"
+    }
+  },
+  {
+    "id": "E-020",
+    "kind": "workflow_issue",
+    "source": "workflow-scan",
+    "data": {
+      "rule": "workflow_pull_request_target",
+      "file": ".github/workflows/ci.yml",
+      "line": 4,
+      "text": "uses pull_request_target"
+    }
+  },
+  {
+    "id": "E-021",
+    "kind": "workflow_issue",
+    "source": "workflow-scan",
+    "data": {
+      "rule": "workflow_write_all",
+      "file": ".github/workflows/ci.yml",
+      "line": 7,
+      "text": "permissions: write-all"
+    }
+  },
+  {
+    "id": "E-022",
+    "kind": "workflow_issue",
+    "source": "workflow-scan",
+    "data": {
+      "rule": "workflow_unpinned_action",
+      "file": ".github/workflows/ci.yml",
+      "line": 13,
+      "text": "actions/checkout@v2"
+    }
+  },
+  {
+    "id": "E-023",
+    "kind": "workflow_issue",
+    "source": "workflow-scan",
+    "data": {
+      "rule": "workflow_unpinned_action",
+      "file": ".github/workflows/ci.yml",
+      "line": 15,
+      "text": "actions/setup-node@v1"
+    }
+  },
+  {
+    "id": "E-024",
+    "kind": "workflow_issue",
+    "source": "workflow-scan",
+    "data": {
+      "rule": "workflow_expression_injection",
+      "file": ".github/workflows/ci.yml",
+      "line": 19,
+      "text": "echo \"Processing PR: ${{ github.event.pull_request.title }}\""
+    }
+  },
+  {
+    "id": "E-025",
+    "kind": "sentinel",
+    "source": "sentinel",
+    "data": {
+      "ok": true,
+      "result": "canary vulnerability caught: True; typosquat caught: True"
+    }
+  }
+]

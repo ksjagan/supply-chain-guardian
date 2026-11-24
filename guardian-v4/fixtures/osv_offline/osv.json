@@ -1,0 +1,38 @@
+{
+  "pkgs": {
+    "qs@6.5.2": ["GHSA-hrpp-h998-j3pp"],
+    "lodash@4.17.15": ["GHSA-p6mc-m468-83gw"],
+    "minimist@1.2.0": ["GHSA-xvch-5ox4-984h"],
+    "express@4.17.1": []
+  },
+  "vulns": {
+    "GHSA-hrpp-h998-j3pp": {
+      "id": "GHSA-hrpp-h998-j3pp",
+      "aliases": ["CVE-2017-1000048"],
+      "cves": ["CVE-2017-1000048"],
+      "severity": "high",
+      "cvss_est": 8.0,
+      "fixed": {"qs": ["6.5.3"]},
+      "summary": "Prototype pollution vulnerability in qs library."
+    },
+    "GHSA-p6mc-m468-83gw": {
+      "id": "GHSA-p6mc-m468-83gw",
+      "aliases": ["CVE-2020-8203"],
+      "cves": ["CVE-2020-8203"],
+      "severity": "high",
+      "cvss_est": 7.4,
+      "fixed": {"lodash": ["4.17.21"]},
+      "summary": "Prototype pollution in lodash via zipObjectDeep function."
+    },
+    "GHSA-xvch-5ox4-984h": {
+      "id": "GHSA-xvch-5ox4-984h",
+      "aliases": ["CVE-2020-7598"],
+      "cves": ["CVE-2020-7598"],
+      "severity": "medium",
+      "cvss_est": 5.5,
+      "fixed": {"minimist": ["1.2.6"]},
+      "summary": "Prototype pollution in minimist before 1.2.6."
+    }
+  },
+  "fetched_at": "2026-11-20T10:00:00Z"
+}

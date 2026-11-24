@@ -1,0 +1,14 @@
+{
+  "pkgs": {"canary-old-cve@0.0.1": ["GHSA-canary-0001"]},
+  "vulns": {
+    "GHSA-canary-0001": {
+      "id": "GHSA-canary-0001",
+      "aliases": ["CVE-2099-0001"],
+      "cves": ["CVE-2099-0001"],
+      "severity": "high",
+      "cvss_est": 8.0,
+      "fixed": {"canary-old-cve": ["0.0.2"]},
+      "summary": "Planted Sentinel canary vulnerability (fixture, not a real CVE)."
+    }
+  }
+}

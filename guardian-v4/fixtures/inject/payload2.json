@@ -1,0 +1,13 @@
+{
+  "items": [
+    {
+      "id": "E-001",
+      "runs_network_command": false,
+      "downloads_and_executes": false,
+      "reads_env_or_credentials": false,
+      "obfuscated": false,
+      "mentions_instructions_to_ai": false,
+      "benign_build_step": true
+    }
+  ]
+}

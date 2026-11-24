@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+env/
+
+# Guardian runtime output and checkpoints
+out/
+guardian/cache/
+*.sqlite
+
+# Secrets – never commit real keys
+.env
+
+# Nested fixture repository
+fixtures/attack-demo/.git/
+
+# OS and Editors
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp

@@ -1,0 +1,17 @@
+{
+  "expected_min_components": 30,
+  "expected_findings": [
+    "GHSA-hrpp-h998-j3pp in qs@6.5.2",
+    "GHSA-p6mc-m468-83gw in lodash@4.17.15",
+    "GHSA-xvch-5ox4-984h in minimist@1.2.0",
+    "recat@1.0.0 looks like 'react' (typosquat)",
+    "recat@1.0.0 runs an install script"
+  ],
+  "expected_types": [
+    "vulnerability",
+    "typosquat",
+    "install_script",
+    "dockerfile_issue",
+    "workflow_issue"
+  ]
+}

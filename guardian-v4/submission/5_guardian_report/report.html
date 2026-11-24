@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Software Supply Chain Guardian Report - </title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --border: #334155;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --crit: #ef4444;
+      --high: #f97316;
+      --med: #eab308;
+      --low: #3b82f6;
+      --ok: #22c55e;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      margin: 0;
+      padding: 24px;
+    }
+    .container { max-width: 1200px; margin: 0 auto; }
+    h1, h2, h3 { margin-top: 0; color: #fff; }
+    .badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-weight: 600;
+      font-size: 12px;
+      text-transform: uppercase;
+    }
+    .badge-critical { background: #7f1d1d; color: #fca5a5; border: 1px solid var(--crit); }
+    .badge-high { background: #7c2d12; color: #fdba74; border: 1px solid var(--high); }
+    .badge-medium { background: #713f12; color: #fde047; border: 1px solid var(--med); }
+    .badge-low { background: #1e3a8a; color: #93c5fd; border: 1px solid var(--low); }
+    .badge-ok { background: #14532d; color: #86efac; border: 1px solid var(--ok); }
+    .badge-status { font-size: 14px; padding: 6px 12px; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 20px; }
+    .metric {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--border);
+      padding: 14px;
+      border-radius: 6px;
+    }
+    .metric-val { font-size: 24px; font-weight: bold; }
+    .metric-lbl { font-size: 12px; color: var(--muted); text-transform: uppercase; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
+    th, td { padding: 10px; text-align: left; border-bottom: 1px solid var(--border); }
+    th { background: rgba(0, 0, 0, 0.2); color: var(--muted); font-size: 12px; }
+    pre, code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 13px;
+      background: #090d16;
+      border-radius: 4px;
+      padding: 2px 6px;
+    }
+    pre { padding: 12px; overflow-x: auto; }
+    .evidence-box {
+      background: #064e3b;
+      border-left: 4px solid var(--ok);
+      padding: 10px 14px;
+      border-radius: 4px;
+      margin: 8px 0;
+      font-size: 13px;
+    }
+    .ai-box {
+      background: #1e3a8a;
+      border-left: 4px solid var(--low);
+      padding: 10px 14px;
+      border-radius: 4px;
+      margin: 8px 0;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <div>
+      <h1>Software Supply Chain Guardian</h1>
+      <div style="color: var(--muted); font-size: 14px;">
+        Run ID: <code></code> &bull; Scanned: 2026-11-24T07:45:52Z &bull; Source: <code></code>
+      </div>
+      <div style="color: var(--muted); font-size: 13px; margin-top: 4px;">
+        AI Status: <strong>OFF (Deterministic rules only)</strong> &bull;
+        OSV: N/A &bull; KEV: N/A
+      </div>
+    </div>
+    <div>
+      <span class="badge badge-status badge-ok">
+        Status: COMPLETE
+      </span>
+    </div>
+  </div>
+
+  <!-- KPI Grid -->
+  <div class="grid">
+    <div class="metric">
+      <div class="metric-lbl">Total Components</div>
+      <div class="metric-val">0</div>
+      <div style="font-size: 11px; color: var(--muted);">Direct: 0 | Transitive: 0</div>
+    </div>
+    <div class="metric">
+      <div class="metric-lbl">Vulnerabilities</div>
+      <div class="metric-val" style="color: var(--text);">
+        0
+      </div>
+      <div style="font-size: 11px; color: var(--muted);">Crit: 0 | High: 0 | Med: 0 | Low: 0</div>
+    </div>
+    <div class="metric">
+      <div class="metric-lbl">New Risks Introduced</div>
+      <div class="metric-val" style="color: var(--ok);">
+        0
+      </div>
+      <div style="font-size: 11px; color: var(--muted);">Change findings: 0</div>
+    </div>
+    <div class="metric">
+      <div class="metric-lbl">Execution & Cost</div>
+      <div class="metric-val">0s</div>
+      <div style="font-size: 11px; color: var(--muted);">Tokens: 0 | Est USD: $0.0000</div>
+    </div>
+  </div>
+
+  <!-- Coverage -->
+  <div class="card">
+    <h2>1. Ecosystem Coverage</h2>
+    <table>
+      <thead><tr><th>Status</th><th>Ecosystem</th><th>Details</th></tr></thead>
+      <tbody>
+        <tr><td><span class="badge badge-ok">Fully Analysed</span></td><td>npm (package-lock.json v2/v3)</td><td>0 components mapped in dependency graph</td></tr>
+        <tr><td><span class="badge badge-ok">Fully Analysed</span></td><td>Dockerfile & GitHub Actions</td><td>Static rules & permission checks complete</td></tr>
+        <tr><td><span class="badge badge-medium">Roadmap (Skipped)</span></td><td>PyPI, Maven, Go</td><td>Out of scope for v4 hackathon spec; listed on roadmap</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Findings -->
+  <div class="card">
+    <h2>2. Prioritised Findings (Evidence-Backed)</h2>
+    
+      <p style="color: var(--ok);">No security findings detected.</p>
+    
+  </div>
+
+  <!-- What Changed -->
+  <div class="card">
+    <h2>3. What Changed (Supply Chain Diff)</h2>
+    
+    <p style="color: var(--muted);">No baseline changes compared or repository is at baseline.</p>
+    
+  </div>
+
+  <!-- Remediation & Validation -->
+  <div class="card">
+    <h2>4. Remediation & Verified Validation</h2>
+    
+      <p style="color: var(--muted);">No remediation applied in this run.</p>
+    
+  </div>
+
+  <!-- Run Health & Trace -->
+  <div class="card">
+    <h2>5. Observability & Agent Trace</h2>
+    <table>
+      <thead><tr><th>Agent</th><th>Status</th><th>Duration</th><th>Tokens</th><th>Cost</th><th>Cache Hits</th></tr></thead>
+      <tbody>
+        
+      </tbody>
+    </table>
+  </div>
+</div>
+</body>
+</html>

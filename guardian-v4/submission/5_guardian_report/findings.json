@@ -1,0 +1,691 @@
+[
+  {
+    "type": "vulnerability",
+    "title": "GHSA-hrpp-h998-j3pp in qs@6.5.2",
+    "risk": "critical",
+    "base_risk": "critical",
+    "component": "qs@6.5.2",
+    "name": "qs",
+    "version": "6.5.2",
+    "evidence_ids": [
+      "E-009",
+      "E-010",
+      "E-011",
+      "E-012"
+    ],
+    "path": [
+      "(app)",
+      "express@4.17.1",
+      "qs@6.5.2"
+    ],
+    "flags": {
+      "direct": false,
+      "dev": false,
+      "reach": "unknown",
+      "kev": true,
+      "epss": 0.852,
+      "introduced": false
+    },
+    "risk_notes": [
+      "base high from severity estimate 8.0",
+      "listed in CISA KEV -> critical",
+      "EPSS 0.852 >= 0.5 -> one level up"
+    ],
+    "detail": "CVEs: CVE-2017-1000048; fixed in: 6.5.3",
+    "status": "open",
+    "explanation": "",
+    "ai_status": "not run",
+    "skeptic": null,
+    "vuln_id": "GHSA-hrpp-h998-j3pp",
+    "fixed": [
+      "6.5.3"
+    ],
+    "score": 78,
+    "score_breakdown": [
+      {
+        "factor": "Severity: critical",
+        "points": 40
+      },
+      {
+        "factor": "Listed in CISA KEV (known exploited)",
+        "points": 25
+      },
+      {
+        "factor": "EPSS exploit probability 0.852",
+        "points": 13
+      }
+    ],
+    "confidence": {
+      "sources": [
+        "cisa-kev",
+        "first-epss",
+        "osv"
+      ],
+      "count": 3,
+      "level": "high"
+    },
+    "id": "F-001"
+  },
+  {
+    "type": "vulnerability",
+    "title": "GHSA-p6mc-m468-83gw in lodash@4.17.15",
+    "risk": "high",
+    "base_risk": "high",
+    "component": "lodash@4.17.15",
+    "name": "lodash",
+    "version": "4.17.15",
+    "evidence_ids": [
+      "E-001",
+      "E-002",
+      "E-004",
+      "E-003"
+    ],
+    "path": [
+      "(app)",
+      "lodash@4.17.15"
+    ],
+    "flags": {
+      "direct": true,
+      "dev": false,
+      "reach": "imported",
+      "kev": false,
+      "epss": 0.421,
+      "introduced": false
+    },
+    "risk_notes": [
+      "base high from severity estimate 7.4"
+    ],
+    "detail": "CVEs: CVE-2020-8203; fixed in: 4.17.21",
+    "status": "open",
+    "explanation": "",
+    "ai_status": "not run",
+    "skeptic": null,
+    "vuln_id": "GHSA-p6mc-m468-83gw",
+    "fixed": [
+      "4.17.21"
+    ],
+    "score": 51,
+    "score_breakdown": [
+      {
+        "factor": "Severity: high",
+        "points": 30
+      },
+      {
+        "factor": "EPSS exploit probability 0.421",
+        "points": 6
+      },
+      {
+        "factor": "Package is imported in source (heuristic)",
+        "points": 10
+      },
+      {
+        "factor": "Direct dependency",
+        "points": 5
+      }
+    ],
+    "confidence": {
+      "sources": [
+        "first-epss",
+        "osv",
+        "text-search"
+      ],
+      "count": 3,
+      "level": "high"
+    },
+    "id": "F-002"
+  },
+  {
+    "type": "typosquat",
+    "title": "recat@1.0.0 looks like 'react' (typosquat)",
+    "risk": "critical",
+    "base_risk": "critical",
+    "component": "recat@1.0.0",
+    "name": "recat",
+    "version": "1.0.0",
+    "evidence_ids": [
+      "E-014",
+      "E-013",
+      "E-015"
+    ],
+    "path": [
+      "(app)",
+      "recat@1.0.0"
+    ],
+    "flags": {
+      "direct": true,
+      "dev": false,
+      "reach": "unknown"
+    },
+    "risk_notes": [
+      "typosquat AND install script -> critical"
+    ],
+    "detail": "edit distance 2 from react",
+    "status": "open",
+    "explanation": "",
+    "ai_status": "not run",
+    "skeptic": null,
+    "score": 45,
+    "score_breakdown": [
+      {
+        "factor": "Severity: critical",
+        "points": 40
+      },
+      {
+        "factor": "Direct dependency",
+        "points": 5
+      }
+    ],
+    "confidence": {
+      "sources": [
+        "lockfile",
+        "name-check"
+      ],
+      "count": 2,
+      "level": "high"
+    },
+    "id": "F-003"
+  },
+  {
+    "type": "install_script",
+    "title": "recat@1.0.0 runs an install script",
+    "risk": "high",
+    "base_risk": "high",
+    "component": "recat@1.0.0",
+    "name": "recat",
+    "version": "1.0.0",
+    "evidence_ids": [
+      "E-014",
+      "E-013",
+      "E-015"
+    ],
+    "path": [
+      "(app)",
+      "recat@1.0.0"
+    ],
+    "flags": {
+      "direct": true,
+      "dev": false,
+      "reach": "unknown",
+      "introduced": false
+    },
+    "risk_notes": [
+      "install script on a new/unknown package -> high"
+    ],
+    "detail": "",
+    "status": "open",
+    "explanation": "",
+    "ai_status": "not run",
+    "skeptic": null,
+    "score": 35,
+    "score_breakdown": [
+      {
+        "factor": "Severity: high",
+        "points": 30
+      },
+      {
+        "factor": "Direct dependency",
+        "points": 5
+      }
+    ],
+    "confidence": {
+      "sources": [
+        "lockfile",
+        "name-check"
+      ],
+      "count": 2,
+      "level": "high"
+    },
+    "id": "F-004"
+  },
+  {
+    "type": "dockerfile_issue",
+    "title": "docker_curl_pipe_sh in Dockerfile:7",
+    "risk": "high",
+    "base_risk": "high",
+    "component": "",
+    "name": "",
+    "version": "",
+    "evidence_ids": [
+      "E-018"
+    ],
+    "path": [
+      "Dockerfile"
+    ],
+    "flags": {
+      "direct": false,
+      "dev": false,
+      "reach": "unknown"
+    },
+    "risk_notes": [
+      "rule docker_curl_pipe_sh -> high"
+    ],
+    "detail": "curl -sSL https://install.example.com/setup.sh | sh",
+    "status": "open",
+    "explanation": "",
+    "ai_status": "not run",
+    "skeptic": null,
+    "score": 30,
+    "score_breakdown": [
+      {
+        "factor": "Severity: high",
+        "points": 30
+      }
+    ],
+    "confidence": {
+      "sources": [
+        "dockerfile-scan"
+      ],
+      "count": 1,
+      "level": "low"
+    },
+    "id": "F-005"
+  },
+  {
+    "type": "dockerfile_issue",
+    "title": "docker_secret_in_env in Dockerfile:3",
+    "risk": "high",
+    "base_risk": "high",
+    "component": "",
+    "name": "",
+    "version": "",
+    "evidence_ids": [
+      "E-017"
+    ],
+    "path": [
+      "Dockerfile"
+    ],
+    "flags": {
+      "direct": false,
+      "dev": false,
+      "reach": "unknown"
+    },
+    "risk_notes": [
+      "rule docker_secret_in_env -> high"
+    ],
+    "detail": "ENV AWS_SECRET_ACCESS_KEY=[REDACTED]",
+    "status": "open",
+    "explanation": "",
+    "ai_status": "not run",
+    "skeptic": null,
+    "score": 30,
+    "score_breakdown": [
+      {
+        "factor": "Severity: high",
+        "points": 30
+      }
+    ],
+    "confidence": {
+      "sources": [
+        "dockerfile-scan"
+      ],
+      "count": 1,
+      "level": "low"
+    },
+    "id": "F-006"
+  },
+  {
+    "type": "workflow_issue",
+    "title": "workflow_expression_injection in .github/workflows/ci.yml:19",
+    "risk": "high",
+    "base_risk": "high",
+    "component": "",
+    "name": "",
+    "version": "",
+    "evidence_ids": [
+      "E-024"
+    ],
+    "path": [
+      ".github/workflows/ci.yml"
+    ],
+    "flags": {
+      "direct": false,
+      "dev": false,
+      "reach": "unknown"
+    },
+    "risk_notes": [
+      "rule workflow_expression_injection -> high"
+    ],
+    "detail": "echo \"Processing PR: ${{ github.event.pull_request.title }}\"",
+    "status": "open",
+    "explanation": "",
+    "ai_status": "not run",
+    "skeptic": null,
+    "score": 30,
+    "score_breakdown": [
+      {
+        "factor": "Severity: high",
+        "points": 30
+      }
+    ],
+    "confidence": {
+      "sources": [
+        "workflow-scan"
+      ],
+      "count": 1,
+      "level": "low"
+    },
+    "id": "F-007"
+  },
+  {
+    "type": "workflow_issue",
+    "title": "workflow_pull_request_target in .github/workflows/ci.yml:4",
+    "risk": "high",
+    "base_risk": "high",
+    "component": "",
+    "name": "",
+    "version": "",
+    "evidence_ids": [
+      "E-020"
+    ],
+    "path": [
+      ".github/workflows/ci.yml"
+    ],
+    "flags": {
+      "direct": false,
+      "dev": false,
+      "reach": "unknown"
+    },
+    "risk_notes": [
+      "rule workflow_pull_request_target -> high"
+    ],
+    "detail": "uses pull_request_target",
+    "status": "open",
+    "explanation": "",
+    "ai_status": "not run",
+    "skeptic": null,
+    "score": 30,
+    "score_breakdown": [
+      {
+        "factor": "Severity: high",
+        "points": 30
+      }
+    ],
+    "confidence": {
+      "sources": [
+        "workflow-scan"
+      ],
+      "count": 1,
+      "level": "low"
+    },
+    "id": "F-008"
+  },
+  {
+    "type": "workflow_issue",
+    "title": "workflow_write_all in .github/workflows/ci.yml:7",
+    "risk": "high",
+    "base_risk": "high",
+    "component": "",
+    "name": "",
+    "version": "",
+    "evidence_ids": [
+      "E-021"
+    ],
+    "path": [
+      ".github/workflows/ci.yml"
+    ],
+    "flags": {
+      "direct": false,
+      "dev": false,
+      "reach": "unknown"
+    },
+    "risk_notes": [
+      "rule workflow_write_all -> high"
+    ],
+    "detail": "permissions: write-all",
+    "status": "open",
+    "explanation": "",
+    "ai_status": "not run",
+    "skeptic": null,
+    "score": 30,
+    "score_breakdown": [
+      {
+        "factor": "Severity: high",
+        "points": 30
+      }
+    ],
+    "confidence": {
+      "sources": [
+        "workflow-scan"
+      ],
+      "count": 1,
+      "level": "low"
+    },
+    "id": "F-009"
+  },
+  {
+    "type": "vulnerability",
+    "title": "GHSA-xvch-5ox4-984h in minimist@1.2.0",
+    "risk": "medium",
+    "base_risk": "medium",
+    "component": "minimist@1.2.0",
+    "name": "minimist",
+    "version": "1.2.0",
+    "evidence_ids": [
+      "E-005",
+      "E-006",
+      "E-008",
+      "E-007"
+    ],
+    "path": [
+      "(app)",
+      "minimist@1.2.0"
+    ],
+    "flags": {
+      "direct": true,
+      "dev": false,
+      "reach": "not found",
+      "kev": false,
+      "epss": 0.15,
+      "introduced": false
+    },
+    "risk_notes": [
+      "base medium from severity estimate 5.5"
+    ],
+    "detail": "CVEs: CVE-2020-7598; fixed in: 1.2.6",
+    "status": "open",
+    "explanation": "",
+    "ai_status": "not run",
+    "skeptic": null,
+    "vuln_id": "GHSA-xvch-5ox4-984h",
+    "fixed": [
+      "1.2.6"
+    ],
+    "score": 27,
+    "score_breakdown": [
+      {
+        "factor": "Severity: medium",
+        "points": 20
+      },
+      {
+        "factor": "EPSS exploit probability 0.15",
+        "points": 2
+      },
+      {
+        "factor": "Direct dependency",
+        "points": 5
+      }
+    ],
+    "confidence": {
+      "sources": [
+        "first-epss",
+        "osv",
+        "text-search"
+      ],
+      "count": 3,
+      "level": "high"
+    },
+    "id": "F-010"
+  },
+  {
+    "type": "dockerfile_issue",
+    "title": "docker_latest_tag in Dockerfile:1",
+    "risk": "medium",
+    "base_risk": "medium",
+    "component": "",
+    "name": "",
+    "version": "",
+    "evidence_ids": [
+      "E-016"
+    ],
+    "path": [
+      "Dockerfile"
+    ],
+    "flags": {
+      "direct": false,
+      "dev": false,
+      "reach": "unknown"
+    },
+    "risk_notes": [
+      "rule docker_latest_tag -> medium"
+    ],
+    "detail": "FROM node:latest",
+    "status": "open",
+    "explanation": "",
+    "ai_status": "not run",
+    "skeptic": null,
+    "score": 20,
+    "score_breakdown": [
+      {
+        "factor": "Severity: medium",
+        "points": 20
+      }
+    ],
+    "confidence": {
+      "sources": [
+        "dockerfile-scan"
+      ],
+      "count": 1,
+      "level": "low"
+    },
+    "id": "F-011"
+  },
+  {
+    "type": "workflow_issue",
+    "title": "workflow_unpinned_action in .github/workflows/ci.yml:13",
+    "risk": "medium",
+    "base_risk": "medium",
+    "component": "",
+    "name": "",
+    "version": "",
+    "evidence_ids": [
+      "E-022"
+    ],
+    "path": [
+      ".github/workflows/ci.yml"
+    ],
+    "flags": {
+      "direct": false,
+      "dev": false,
+      "reach": "unknown"
+    },
+    "risk_notes": [
+      "rule workflow_unpinned_action -> medium"
+    ],
+    "detail": "actions/checkout@v2",
+    "status": "open",
+    "explanation": "",
+    "ai_status": "not run",
+    "skeptic": null,
+    "score": 20,
+    "score_breakdown": [
+      {
+        "factor": "Severity: medium",
+        "points": 20
+      }
+    ],
+    "confidence": {
+      "sources": [
+        "workflow-scan"
+      ],
+      "count": 1,
+      "level": "low"
+    },
+    "id": "F-012"
+  },
+  {
+    "type": "workflow_issue",
+    "title": "workflow_unpinned_action in .github/workflows/ci.yml:15",
+    "risk": "medium",
+    "base_risk": "medium",
+    "component": "",
+    "name": "",
+    "version": "",
+    "evidence_ids": [
+      "E-023"
+    ],
+    "path": [
+      ".github/workflows/ci.yml"
+    ],
+    "flags": {
+      "direct": false,
+      "dev": false,
+      "reach": "unknown"
+    },
+    "risk_notes": [
+      "rule workflow_unpinned_action -> medium"
+    ],
+    "detail": "actions/setup-node@v1",
+    "status": "open",
+    "explanation": "",
+    "ai_status": "not run",
+    "skeptic": null,
+    "score": 20,
+    "score_breakdown": [
+      {
+        "factor": "Severity: medium",
+        "points": 20
+      }
+    ],
+    "confidence": {
+      "sources": [
+        "workflow-scan"
+      ],
+      "count": 1,
+      "level": "low"
+    },
+    "id": "F-013"
+  },
+  {
+    "type": "dockerfile_issue",
+    "title": "docker_no_user in Dockerfile:1",
+    "risk": "low",
+    "base_risk": "low",
+    "component": "",
+    "name": "",
+    "version": "",
+    "evidence_ids": [
+      "E-019"
+    ],
+    "path": [
+      "Dockerfile"
+    ],
+    "flags": {
+      "direct": false,
+      "dev": false,
+      "reach": "unknown"
+    },
+    "risk_notes": [
+      "rule docker_no_user -> low"
+    ],
+    "detail": "no non-root USER set",
+    "status": "open",
+    "explanation": "",
+    "ai_status": "not run",
+    "skeptic": null,
+    "score": 10,
+    "score_breakdown": [
+      {
+        "factor": "Severity: low",
+        "points": 10
+      }
+    ],
+    "confidence": {
+      "sources": [
+        "dockerfile-scan"
+      ],
+      "count": 1,
+      "level": "low"
+    },
+    "id": "F-014"
+  }
+]

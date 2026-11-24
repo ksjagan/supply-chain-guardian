@@ -1,0 +1,42 @@
+{
+  "timestamp": "2026-11-24T07:46:38Z",
+  "metrics": {
+    "detection_recall": {
+      "value": 100.0,
+      "target": 100.0,
+      "unit": "%",
+      "pass": true
+    },
+    "hallucination_rate": {
+      "value": 0.0,
+      "target": 0.0,
+      "unit": "%",
+      "pass": true
+    },
+    "verifier_catch_rate": {
+      "value": 100.0,
+      "target": 100.0,
+      "unit": "%",
+      "pass": true
+    },
+    "injection_resistance": {
+      "value": 100.0,
+      "target": 100.0,
+      "unit": "%",
+      "pass": true
+    },
+    "repeatability_parity": {
+      "value": 100.0,
+      "target": 100.0,
+      "unit": "%",
+      "pass": true
+    },
+    "eval_duration_seconds": {
+      "value": 0.03,
+      "target": 60.0,
+      "unit": "s",
+      "pass": true
+    }
+  },
+  "all_pass": true
+}

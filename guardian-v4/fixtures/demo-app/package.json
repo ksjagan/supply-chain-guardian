@@ -1,0 +1,17 @@
+{
+  "name": "demo-app",
+  "version": "1.0.0",
+  "description": "Realistic vulnerable demo app for Software Supply Chain Guardian",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "dependencies": {
+    "express": "4.17.1",
+    "lodash": "4.17.15",
+    "recat": "1.0.0"
+  },
+  "devDependencies": {
+    "minimist": "1.2.0"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "run_id": "demo_package_run",
+  "timestamp": "2026-11-24T07:45:52Z",
+  "status": "COMPLETE",
+  "source": "",
+  "components_total": 0,
+  "components_direct": 0,
+  "components_transitive": 0,
+  "vulns_total": 0,
+  "vulns_critical": 0,
+  "vulns_high": 0,
+  "vulns_medium": 0,
+  "vulns_low": 0,
+  "new_risks": 0,
+  "changes_count": 0,
+  "total_duration": 0,
+  "total_tokens": 0,
+  "total_cost": 0
+}
